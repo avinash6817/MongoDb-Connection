@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Form</title>
+</head>
+
+<body>
+    <h1>Create a New Post</h1>
+
+    <form id="postForm">
+        <label for="title">Title : </label>
+        <input type="text" id="title" name="title" required>
+
+        <br>
+
+        <label for="content">Content:</label>
+        <textarea id="content" name="content" rows="4" required></textarea>
+
+        <br>
+
+
+        <input type="submit" value="Submit">
+        <!-- <button type="submit">Submit</button> -->
+    </form>
+
+    <div id="postsContainer">
+        <!-- Display fetched posts here -->
+    </div>
+
+    <script>
+        async function deleteBlog (blogId) {
+            const flag = confirm("Are you sure");
+
+            if(flag){
+                const res = await fetch(`http://localhost:5000/delete-blog/${blogId}`, {
+                    method : 'DELETE',
+                })
+    
+                const responseData = await res.json();
+                console.log(responseData)
+    
+                fetchPosts();
+            }
+        }   
+
+        async function fetchPosts() {
+            const postsContainer = document.getElementById('postsContainer');
+            const response = await fetch('http://localhost:5000/get-all-blogs');
+            const blogs = await response.json();
+
+            postsContainer.innerHTML = '<h2>All Posts</h2>';
+            blogs.forEach(blog => {
+                const postElement = document.createElement('div');
+                postElement.innerHTML = `
+                                        <strong>${blog.title}</strong> 
+                                        <button onclick="deleteBlog('${blog._id}')"> delete </button>
+                                        <button onclick="updateBlog('${blog._id}','${blog.title}','${blog.content}')"> update </button>
+                                        <p>${blog.content}</p>
+                                        `;
+                postsContainer.appendChild(postElement);
+            });
+
+            // blogs.map((post) => {
+                //     const postElement = document.createElement('div');
+                //     postElement.innerHTML = `<strong>${post.title}</strong>
+                //                             <p>${post.content}</p>`;
+                //     postsContainer.appendChild(postElement);
+                // })
+
+                // for(let i=0;i<blogs.length;i++){
+                //     const postElement = document.createElement('div');
+                //     postElement.innerHTML = `<strong>${blogs[i].title}</strong>
+                //                             <p>${blogs[i].content}</p>`;
+                //     postsContainer.appendChild(postElement);
+                // }
+
+        }
+
+        const updateBlog = async (blogId,currentTitle,currentContent) => {
+            const newTitle = prompt('Enter the new title:', currentTitle);
+            const newContent = prompt('Enter the new content:', currentContent);
+
+            const res = await fetch(`http://localhost:5000/update-blog/${blogId}`,{
+                method : 'PUT',
+                headers : {
+                    'Content-Type' : 'application/json'
+                },
+                body : JSON.stringify({title : newTitle,content : newContent})
+            })
+
+            const responseData = await res.json();
+            console.log(responseData);
+
+            fetchPosts();
+        }
+
+        const addBlog = async () => {
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+
+            // Send a POST request to the backend
+            const response = await fetch('http://localhost:5000/add-blog', {
+                method : 'POST',
+                headers : {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title, content }),
+
+            });
+
+            const responseData = await response.json();
+            console.log(responseData);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const postForm = document.getElementById('postForm');
+
+            
+            postForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                addBlog();
+
+                postForm.reset();
+
+                fetchPosts();
+            });
+
+
+            fetchPosts();
+        });
+
+    </script>
+</body>
+
+</html>
